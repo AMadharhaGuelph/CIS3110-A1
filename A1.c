@@ -11,28 +11,43 @@
 /* GLOBAL VARIABLES */
 char displayMode;
 char filename[BUFFER_SIZE];
+int fileDescriptor;
+char *fileData;
 
 /* FUNCTION PROTOTYPES */
 char getMainMenuInput();
 void getDisplayMenuInput();
 int getFilenameMenuInput();
+void readFile();
+void displayASCII();
+void displayHex();
 
 int main() {
     displayMode = 'a';
 
     while(true) {
-        char firstOptionSelected = getMainMenuInput();
+        char selection = getMainMenuInput();
+        int response;
 
-        write(STDIN_FILENO, "\n", 1);
+        printf("\n");
 
-        switch(firstOptionSelected) {
+        switch(selection) {
             case 'o':
-                getFilenameMenuInput();
+                response = getFilenameMenuInput();
+                if(response > 0) {
+                    readFile();
+                    if(displayMode == 'a') {
+                        displayASCII();
+                    } else {
+                        displayHex();
+                    }
+                }
                 break;
             case 'd':
                 getDisplayMenuInput();
                 break;
             default:
+                exit(0);               
                 break;
         }
     }
@@ -41,62 +56,88 @@ int main() {
 }
 
 char getMainMenuInput() {
-    char optionSelected[1];
-    int c;
+    char selection[BUFFER_SIZE];
 
     if(displayMode == 'a') {
-        write(STDOUT_FILENO, "Current display mode: ASCII\n", 28);
+        printf("Current display mode: ASCII\n");
     } else {
-        write(STDOUT_FILENO, "Current display mode: Hex\n", 26);
+        printf("Current display mode: Hex\n");
     }
 
-    write(STDOUT_FILENO, "\t- Enter \'o\' to enter a file name.\n", 35);
-    write(STDOUT_FILENO, "\t- Enter \'d\' to select a display mode.\n", 39);
-    write(STDOUT_FILENO, "\t- Enter \'x\' to exit.\n", 22);
+    printf("\t- Enter \'o\' to enter a file name.\n");
+    printf("\t- Enter \'d\' to select a display mode.\n");
+    printf("\t- Enter \'x\' to exit.\n");
 
     do {
-        write(STDOUT_FILENO, "Enter (will take first letter as input): ", 41);
-        read(STDIN_FILENO, optionSelected, 1);
-        while ((c = getchar()) != '\n' && c != EOF);
-    } while(optionSelected[0] != 'o' && optionSelected[0] != 'd' && optionSelected[0] != 'x');
+        printf("Enter: ");
+        fgets(selection, BUFFER_SIZE, stdin);
+        selection[strlen(selection)-1] = '\0';
+        if(strcmp(selection, "o") != 0 && strcmp(selection, "d") !=0 && strcmp(selection, "x") != 0) {
+            printf("Invalid Input.\n");
+        }
+    } while(strcmp(selection, "o") != 0 && strcmp(selection, "d") !=0 && strcmp(selection, "x") != 0);
 
-    return optionSelected[0];
+    return selection[0];
 }
 
 void getDisplayMenuInput() {
-    char optionSelected[1];
-    int c;
+    char selection[BUFFER_SIZE];
 
-    write(STDOUT_FILENO, "Enter display mode:\n", 20);
-    write(STDOUT_FILENO, "\t-Enter \'a\' for ASCII.\n", 23);
-    write(STDOUT_FILENO, "\t-Enter \'h\' for Hex.\n", 21);
+    printf("Enter display mode:\n");
+    printf("\t-Enter \'a\' for ASCII.\n");
+    printf("\t-Enter \'h\' for Hex.\n");
 
     do {
-        write(STDOUT_FILENO, "Enter (will take first letter as input): ", 41);
-        read(STDIN_FILENO, optionSelected, 1);
-        while ((c = getchar()) != '\n' && c != EOF);
-    } while(optionSelected[0] != 'a' && optionSelected[0] != 'h');
+        printf("Enter: ");
+        fgets(selection, BUFFER_SIZE, stdin);
+        selection[strlen(selection)-1] = '\0';
+        if(strcmp(selection, "a") != 0 && strcmp(selection, "h") !=0) {
+            printf("Invalid Input.\n");
+        }
+    } while(strcmp(selection, "a") != 0 && strcmp(selection, "h") !=0);
 
-    displayMode = optionSelected[0];
+    printf("\n");
+
+    displayMode = selection[0];
 }
 
 int getFilenameMenuInput() {
-    size_t n;
-    int fd;
+    printf("Enter file name: ");
+    fgets(filename, BUFFER_SIZE, stdin);
+    filename[strlen(filename)-1] = '\0';
 
-    write(STDOUT_FILENO, "Enter file name: ", 17);
-    n = read(STDIN_FILENO, filename, BUFFER_SIZE);
+    fileDescriptor = open(filename, O_RDONLY);
 
-    filename[n-1] = '\0';
-
-    fd = open(filename, O_RDONLY);
-
-    if(fd < 0) {
-        char errorMsg* = malloc(18+n);
-        errorMsg = "Cannot open file " + filename + ".";
-        write(STDOUT_FILENO, errorMsg, );
+    if(fileDescriptor < 0) {
+        printf("Cannot open file %s.\n", filename);
         return -1;
     }
 
+    printf("\n");
+
     return 1;
+}
+
+void readFile() {
+    int fileSize;
+    int bytes;
+
+    fileSize = lseek(fileDescriptor, 0, SEEK_END);
+    fileData = malloc(sizeof(char) * fileSize);
+
+    lseek(fileDescriptor, 0, SEEK_SET);
+
+    while((bytes = read(fileDescriptor, fileData, fileSize)) > 0) {
+        if(bytes < 0) {
+            printf("Error while reading file.");
+        }
+    }
+}
+
+void displayASCII() {
+  
+}
+
+void displayHex() {
+
 }
