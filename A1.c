@@ -166,13 +166,13 @@ void displayASCII() {
 void displayHex() {
     int lines = (fileSize/16) + ((fileSize % 16) != 0) + 1;
     int counter = 0;
+    int indexCount = 0;
+    int prevIndex = 0;
 
     for(int i = 0; i < lines; i++) {
-        if(i <= 1) {
-            printf("%08x", i*16);
-        } else {
-            printf("%08x", (i*16)-1);
-        }
+        printf("%08x", (indexCount+prevIndex));
+        prevIndex += indexCount;
+        indexCount = 0;
         for(int i = 0; i < 16; i++) {
             if(fileData[i+counter] == '\0') {
                 break;
@@ -180,6 +180,7 @@ void displayHex() {
             if(i != 0 && (i+counter) % 8 == 0) {
                 printf(" ");
             }
+            indexCount++;
             printf(" %02x", fileData[i+counter]);
         }
         printf("\n");
@@ -189,11 +190,11 @@ void displayHex() {
 }
 
 char getAfterDisplayMenuInput() {
-    char selection;
+    char selection[BUFFER_SIZE];
 
-    print("Would you like to continue?\n");
+    printf("Would you like to continue?\n");
     printf("\t-Enter \'m\' to return to the main menu.\n");
-    printf("\t-Enter \'o\' to exit.");
+    printf("\t-Enter \'x\' to exit.\n");
 
     do {
         printf("Enter: ");
@@ -203,8 +204,9 @@ char getAfterDisplayMenuInput() {
             printf("Invalid Input.\n");
         }
     } while(strcmp(selection, "m") != 0 && strcmp(selection, "x") !=0);
+    printf("\n");
 
-    return selection;
+    return selection[0];
 }
 
 void exitProgram() {
