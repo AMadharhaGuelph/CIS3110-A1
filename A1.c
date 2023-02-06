@@ -12,6 +12,7 @@
 char displayMode;
 char filename[BUFFER_SIZE];
 int fileDescriptor;
+int fileSize;
 char *fileData;
 
 /* FUNCTION PROTOTYPES */
@@ -21,6 +22,8 @@ int getFilenameMenuInput();
 void readFile();
 void displayASCII();
 void displayHex();
+char getAfterDisplayMenuInput();
+void exitProgram();
 
 int main() {
     displayMode = 'a';
@@ -41,13 +44,19 @@ int main() {
                     } else {
                         displayHex();
                     }
+                    selection = getAfterDisplayMenuInput();
+                    if(selection == 'm') {
+                        close(fileDescriptor);
+                    } else {
+                        exitProgram();
+                    }
                 }
                 break;
             case 'd':
                 getDisplayMenuInput();
                 break;
             default:
-                exit(0);               
+                exitProgram();               
                 break;
         }
     }
@@ -109,7 +118,7 @@ int getFilenameMenuInput() {
     fileDescriptor = open(filename, O_RDONLY);
 
     if(fileDescriptor < 0) {
-        printf("Cannot open file %s.\n", filename);
+        printf("Cannot open file %s.\n\n", filename);
         return -1;
     }
 
@@ -119,7 +128,6 @@ int getFilenameMenuInput() {
 }
 
 void readFile() {
-    int fileSize;
     int bytes;
 
     fileSize = lseek(fileDescriptor, 0, SEEK_END);
@@ -135,9 +143,71 @@ void readFile() {
 }
 
 void displayASCII() {
-  
+    char c[1];
+    int ascii;
+
+    for(int i = 0; i < fileSize; i++) {
+        c[0] = fileData[i];
+        ascii = (int) c[0];
+        if(ascii >= 0 && ascii <= 9) {
+            write(STDOUT_FILENO, " ", 1);
+        }
+        else if(ascii >= 11 && ascii <= 31) {
+            write(STDOUT_FILENO, "?", 1);
+        }
+        else {
+            write(STDOUT_FILENO, c, 1);
+        }
+    }
+
+    printf("\n\n");
 }
 
 void displayHex() {
+    int lines = (fileSize/16) + ((fileSize % 16) != 0) + 1;
+    int counter = 0;
 
+    for(int i = 0; i < lines; i++) {
+        if(i <= 1) {
+            printf("%08x", i*16);
+        } else {
+            printf("%08x", (i*16)-1);
+        }
+        for(int i = 0; i < 16; i++) {
+            if(fileData[i+counter] == '\0') {
+                break;
+            }
+            if(i != 0 && (i+counter) % 8 == 0) {
+                printf(" ");
+            }
+            printf(" %02x", fileData[i+counter]);
+        }
+        printf("\n");
+        counter += 16;
+    }
+    printf("\n");
+}
+
+char getAfterDisplayMenuInput() {
+    char selection;
+
+    print("Would you like to continue?\n");
+    printf("\t-Enter \'m\' to return to the main menu.\n");
+    printf("\t-Enter \'o\' to exit.");
+
+    do {
+        printf("Enter: ");
+        fgets(selection, BUFFER_SIZE, stdin);
+        selection[strlen(selection)-1] = '\0';
+        if(strcmp(selection, "m") != 0 && strcmp(selection, "x") !=0) {
+            printf("Invalid Input.\n");
+        }
+    } while(strcmp(selection, "m") != 0 && strcmp(selection, "x") !=0);
+
+    return selection;
+}
+
+void exitProgram() {
+    close(fileDescriptor);
+    exit(0);
 }
