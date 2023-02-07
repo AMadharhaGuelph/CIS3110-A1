@@ -13,7 +13,7 @@ char displayMode;
 char filename[BUFFER_SIZE];
 int fileDescriptor;
 int fileSize;
-char *fileData;
+unsigned char *fileData;
 
 /* FUNCTION PROTOTYPES */
 char getMainMenuInput();
@@ -142,22 +142,15 @@ void readFile() {
     }
 }
 
-void displayASCII() {
-    char c[1];
-    int ascii;
-
+void displayASCII() {    
     for(int i = 0; i < fileSize; i++) {
-        c[0] = fileData[i];
-        ascii = (int) c[0];
-        if(ascii >= 0 && ascii <= 9) {
-            write(STDOUT_FILENO, " ", 1);
+        if((fileData[i] >= 0x0 && fileData[i] <= 0x9) || (fileData[i] >= 0xB && fileData[i] <= 0x1F)) {
+            fileData[i] = 0x20;
         }
-        else if(ascii >= 11 && ascii <= 31) {
-            write(STDOUT_FILENO, "?", 1);
+        if(fileData[i] >= 0x7F) {
+            fileData[i] = 0x3F;
         }
-        else {
-            write(STDOUT_FILENO, c, 1);
-        }
+        printf("%c", fileData[i]);
     }
 
     printf("\n\n");
@@ -211,5 +204,8 @@ char getAfterDisplayMenuInput() {
 
 void exitProgram() {
     close(fileDescriptor);
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
     exit(0);
 }
