@@ -26,14 +26,17 @@ char getAfterDisplayMenuInput();
 void exitProgram();
 
 int main() {
+    // Default display mode is ASCII
     displayMode = 'a';
 
     while(true) {
+        // Get main menu input
         char selection = getMainMenuInput();
         int response;
 
         printf("\n");
 
+        // Display new menu depending on input
         switch(selection) {
             case 'o':
                 response = getFilenameMenuInput();
@@ -45,8 +48,9 @@ int main() {
                         displayHex();
                     }
                     selection = getAfterDisplayMenuInput();
+                    free(fileData);
                     if(selection == 'm') {
-                        close(fileDescriptor);
+                        close(fileDescriptor);    
                     } else {
                         exitProgram();
                     }
@@ -67,6 +71,7 @@ int main() {
 char getMainMenuInput() {
     char selection[BUFFER_SIZE];
 
+    // Display menu
     if(displayMode == 'a') {
         printf("Current display mode: ASCII\n");
     } else {
@@ -77,6 +82,7 @@ char getMainMenuInput() {
     printf("\t- Enter \'d\' to select a display mode.\n");
     printf("\t- Enter \'x\' to exit.\n");
 
+    // Keep prompting for input while input is invalid
     do {
         printf("Enter: ");
         fgets(selection, BUFFER_SIZE, stdin);
@@ -91,11 +97,13 @@ char getMainMenuInput() {
 
 void getDisplayMenuInput() {
     char selection[BUFFER_SIZE];
-
+    
+    // Display menu
     printf("Enter display mode:\n");
     printf("\t-Enter \'a\' for ASCII.\n");
     printf("\t-Enter \'h\' for Hex.\n");
 
+    // Keep prompting for input while input is invalid
     do {
         printf("Enter: ");
         fgets(selection, BUFFER_SIZE, stdin);
@@ -111,12 +119,14 @@ void getDisplayMenuInput() {
 }
 
 int getFilenameMenuInput() {
+    // Display menu
     printf("Enter file name: ");
     fgets(filename, BUFFER_SIZE, stdin);
     filename[strlen(filename)-1] = '\0';
 
     fileDescriptor = open(filename, O_RDONLY);
 
+    // Error check file
     if(fileDescriptor < 0) {
         printf("Cannot open file %s.\n\n", filename);
         return -1;
@@ -128,6 +138,7 @@ int getFilenameMenuInput() {
 }
 
 void readFile() {
+    // read file into memory 
     int bytes;
 
     fileSize = lseek(fileDescriptor, 0, SEEK_END);
@@ -142,7 +153,9 @@ void readFile() {
     }
 }
 
-void displayASCII() {    
+
+void displayASCII() {   
+    // Display the file, replacing special charaters  
     for(int i = 0; i < fileSize; i++) {
         if((fileData[i] >= 0x0 && fileData[i] <= 0x9) || (fileData[i] >= 0xB && fileData[i] <= 0x1F)) {
             fileData[i] = 0x20;
@@ -157,23 +170,26 @@ void displayASCII() {
 }
 
 void displayHex() {
+    // Display the file in hex 
     int lines = (fileSize/16) + ((fileSize % 16) != 0) + 1;
     int counter = 0;
     int indexCount = 0;
     int prevIndex = 0;
+    int charCounter = 0;
 
     for(int i = 0; i < lines; i++) {
         printf("%08x", (indexCount+prevIndex));
         prevIndex += indexCount;
         indexCount = 0;
         for(int i = 0; i < 16; i++) {
-            if(fileData[i+counter] == '\0') {
+            if(charCounter == fileSize) {
                 break;
             }
             if(i != 0 && (i+counter) % 8 == 0) {
                 printf(" ");
             }
             indexCount++;
+            charCounter++;
             printf(" %02x", fileData[i+counter]);
         }
         printf("\n");
@@ -185,10 +201,12 @@ void displayHex() {
 char getAfterDisplayMenuInput() {
     char selection[BUFFER_SIZE];
 
+    // Display menu
     printf("Would you like to continue?\n");
     printf("\t-Enter \'m\' to return to the main menu.\n");
     printf("\t-Enter \'x\' to exit.\n");
 
+    // Keep prompting for input while input is invalid 
     do {
         printf("Enter: ");
         fgets(selection, BUFFER_SIZE, stdin);
@@ -203,6 +221,7 @@ char getAfterDisplayMenuInput() {
 }
 
 void exitProgram() {
+    // close all file descriptors and exit program
     close(fileDescriptor);
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
